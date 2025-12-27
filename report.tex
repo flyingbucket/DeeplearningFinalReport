@@ -1,0 +1,139 @@
+\documentclass[aspectratio=169]{beamer}
+\usetheme{metropolis}
+\metroset{subsectionpage=progressbar}
+
+\usefonttheme{professionalfonts} % 使用系统/自定字体
+
+
+% === 字体设置 ===
+\usepackage[UTF8,scheme=plain,fontset=none]{ctex}
+\setCJKmainfont{Source Han Serif CN}[BoldFont={Source Han Serif CN Bold}]
+\setCJKsansfont{Source Han Sans CN}[BoldFont={Source Han Sans CN Bold}]
+% \setCJKmonofont{Sarasa Mono CN}
+
+% \input{commands.tex}
+
+% beamer 已加载 hyperref；加 unicode 以支持中文书签
+\hypersetup{unicode}
+
+% define paragraph
+\providecommand{\paragraph}[1]{\smallskip\textbf{#1}\par}
+
+% 常用包
+\usepackage{longtable,booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
+% \graphicspath{{.}{./figs/}{./images/}{./images_in_paper/}}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{svg}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{threeparttable}
+
+% 算法环境（与 beamer 兼容）
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}  % 提供 algorithmic 环境、\State 等
+% 可选：微调 algorithmic 缩进
+\algrenewcommand\algorithmicindent{0.8em}
+
+% 数学粗体与梯度符号
+\usepackage{bm} % \boldsymbol
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\bz}{\mathbf{z}}
+\newcommand{\bI}{\mathbf{I}}
+\newcommand{\bzero}{\mathbf{0}}
+\newcommand{\bepsilon}{\boldsymbol{\epsilon}}
+\newcommand{\grad}{\nabla}
+% 超链接（beamer 已加载 hyperref，这里只补选项）
+% \hypersetup{unicode=true}
+
+% 编号风格
+\setbeamertemplate{caption}[numbered]
+\setbeamertemplate{caption label separator}{.}
+
+\title{基于transformer的diffusion超分辨模型}
+\author{李孟霖}
+\date{\today}
+
+%---Document Begins---
+\begin{document}
+\begin{frame}[plain]
+  \titlepage
+\end{frame}
+\section{Introduction}
+\subsection{研究背景}
+\begin{frame}{主流超分辨模型}
+  EDSR(CNN)
+ 
+  SwinIR(transformer)
+ 
+  StableSR(Diffusion) 
+ 
+  Diffusion模型在生成任务中往往具有比较好的高频细节生成能力,
+  本研究中考虑使用Diffusion方法构造超分辨模型
+\end{frame}
+
+\begin{frame}{Diffusion backbone}
+  UNet 
+ 
+  DiT 
+ 
+  Transformer模型相比于UNet具有更好的全局性、更强的灵活性和更低的计算开销，
+  本研究考虑使用Transformer作为去噪模块
+\end{frame}
+
+\begin{frame}{去噪方式}
+  epsilon-prediction 
+ 
+  x-prediction 
+ 
+  v-prediction 
+\end{frame}
+\subsection{相关工作}
+\begin{frame}{JiT}
+  何恺明团队CFG条件生成模型(JiT)，Back to Basics: Let Denoising Generative Models Denoise
+
+  低维流形假设
+
+  以vit为去噪模块backbone,模型做x-prediction,x-prediction的预测值变换为v-prediction构造损失函数
+\end{frame}
+
+\section{Methods}
+\begin{frame}{模型概览}
+  主体与JiT相同，删去CFGtoken拼接，尝试按下述两种方式将低清图信息引入 
+\end{frame}
+
+\begin{frame}{低清图插入方式}
+  \begin{itemize}
+    \item 将低清图编码为token,和带噪声图像拼接成一个序列
+    \item 将低清图和带噪声图像按通道拼接
+  \end{itemize}
+\end{frame}
+
+\section{Experiments}
+\subsection{按token拼接}
+\begin{frame}{性能指标}
+  psnr ssim 
+\end{frame}
+\begin{frame}
+  效果图 
+\end{frame}
+\subsection{按通道拼接}
+\begin{frame}{性能指标}
+  psnr ssim 
+\end{frame}
+\begin{frame}
+  效果图 
+\end{frame}
+
+\subsection{基线对比}
+
+
+\begin{frame}[standout]
+  谢谢大家！
+\end{frame}
+\end{document}

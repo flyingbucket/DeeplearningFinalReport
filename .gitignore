@@ -1,0 +1,78 @@
+# =========================
+# 基本 LaTeX/TeX Live 工程
+# =========================
+
+# 常见中间文件
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex(busy)
+*.nav
+*.snm
+*.vrb
+
+# BibTeX / biber
+*.bbl
+*.bcf
+*.blg
+*.run.xml
+
+# 索引 / 术语表
+*.idx
+*.ilg
+*.ind
+*.ist
+*.glo
+*.glg
+*.gls
+*.glsdefs
+
+# beamer 相关
+*.nav
+*.snm
+
+# 代码高亮 (minted, listings 等)
+_minted*
+*.pyg
+
+# 其他常见临时文件
+*.toc.*
+*.dvi
+*.ps
+*.xdv
+*.upa
+*.upb
+texput.log
+
+# =========================
+# 可选：构建产物（看你要不要提交）
+# =========================
+
+# 如果不想把最终 PDF 版本也提交，就打开这一行：
+# *.pdf
+
+# 如果你用 build/ 作为编译输出目录（latexmk -output-directory=build/）
+build/
+
+# VS Code 等编辑器的一些缓存（可选）
+.vscode/
+*.code-workspace
+*.swp
+*.swo
+*~
+
+# =========================
+# 你自己的工程文件
+# =========================
+# 一般不要忽略：
+#   *.tex       主文档和子文档
+#   *.cls *.sty 自定义宏包和样式
+#   *.bib       参考文献
+#   figures/*   图片
+#   commands.tex 之类的命令文件
