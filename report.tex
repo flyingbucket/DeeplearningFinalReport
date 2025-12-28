@@ -271,6 +271,68 @@ v_t = \frac{x_0 - x_t}{1 - t}
 
 
 \section{结果分析}
+
+\begin{frame}{性能对比}
+  \begin{table}[]
+    \centering
+    \begin{tabular}{|c|c|c|}
+    \hline
+    \textbf{算法}          & \textbf{psnr}       & \textbf{ssim}     \\ \hline
+    bicubic       & 19.67      & 0.579     \\ \hline
+    EDSR          & 22.92      & 0.702     \\ \hline
+    SwinIR        & 23.77      & 0.733     \\ \hline 
+    本模型        & 20.47      & 0.617      \\ \hline
+    \end{tabular}
+    \caption{性能对比}
+  \end{table}
+\end{frame}
+
+\begin{frame}{整体性能总结}
+\begin{itemize}
+  \item 在 ImageNet $\times4$ 超分辨任务上，
+  本方法在 \textbf{PSNR} 与 \textbf{SSIM} 指标上
+  \textbf{明显优于 bicubic 插值}。
+  
+  \item 与经典回归型超分模型（如 \textbf{EDSR}、\textbf{SwinIR}）相比，
+  当前模型在 \textbf{PSNR / SSIM 指标上仍存在差距}。
+  
+  \item 该结果表明：
+  基于 Diffusion 的 JiT-SR 方法在像素级重建指标上
+  \textbf{尚未达到当前主流 SR 方法的性能水平}。
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{反思：连续型生成模型与重建任务的适配性}
+\begin{itemize}
+  \item 本工作采用的 Diffusion / JiT 属于 \textbf{连续型生成模型}，
+  其核心目标是学习条件分布 $p(x_{\text{HR}} \mid x_{\text{LR}})$，
+  而非最小化像素级误差。
+
+  \item 对于超分辨这类 \textbf{重建型任务}，
+  PSNR 与 SSIM 本质上衡量的是
+  \textbf{条件均值解的像素一致性}，
+  与生成模型的优化目标并不完全一致。
+
+  \item 在 ImageNet 等高复杂度数据集上，
+  同一低清图像可能对应多种合理的高分辨结果，
+  连续型模型更倾向于生成 \textbf{感知上合理但非像素最优} 的样本。
+
+  \item 因此，Diffusion 模型在感知质量与细节多样性上具有优势，
+  但在 PSNR / SSIM 等像素级重建指标上
+  \textbf{不一定占优}，这一现象具有一定的范式必然性。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{反思：低清图条件信息引入方式}
+    简单的token拼接的条件信息引入形式,会导致条件信息token和带噪声图patch的token,在self attention的Q K V中没有区别，
+    它们完全对等地“互相参考”
+  \begin{figure}
+    \centering
+    \includegraphics[width=0.65\linewidth]{./preprocess/jitblock_selfAttn.pdf}
+    \caption{JitBlock self attention的结构}
+  \end{figure}
+\end{frame}
 \begin{frame}[standout]
   谢谢大家！
 \end{frame}
