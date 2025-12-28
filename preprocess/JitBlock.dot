@@ -1,0 +1,47 @@
+digraph JiTBlock {
+    rankdir=TB;
+    node [shape=box, style=rounded];
+
+    x_in   [label="Input x"];
+    c_in   [label="Conditioning c"];
+
+    adaLN  [label="AdaLN Modulation\nSiLU → Linear(6·hidden)"];
+    shift_msa [label="shift_msa"];
+    scale_msa [label="scale_msa"];
+    gate_msa  [label="gate_msa"];
+    shift_mlp [label="shift_mlp"];
+    scale_mlp [label="scale_mlp"];
+    gate_mlp  [label="gate_mlp"];
+
+    norm1  [label="RMSNorm"];
+    mod1   [label="AdaLN Modulation\n(scale_msa · x + shift_msa)"];
+    attn   [label="Self-Attention\n(QKV + RoPE)"];
+    gate1  [label="× gate_msa"];
+    add1   [label="Residual Add"];
+
+    norm2  [label="RMSNorm"];
+    mod2   [label="AdaLN Modulation\n(scale_mlp · x + shift_mlp)"];
+    mlp    [label="SwiGLU FFN"];
+    gate2  [label="× gate_mlp"];
+    add2   [label="Residual Add"];
+
+    x_out  [label="Output x"];
+
+    c_in -> adaLN;
+    adaLN -> shift_msa;
+    adaLN -> scale_msa;
+    adaLN -> gate_msa;
+    adaLN -> shift_mlp;
+    adaLN -> scale_mlp;
+    adaLN -> gate_mlp;
+
+    x_in -> norm1 -> mod1 -> attn -> gate1 -> add1;
+    gate_msa -> gate1;
+    x_in -> add1;
+
+    add1 -> norm2 -> mod2 -> mlp -> gate2 -> add2;
+    gate_mlp -> gate2;
+    add1 -> add2;
+
+    add2 -> x_out;
+}

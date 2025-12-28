@@ -1,0 +1,69 @@
+digraph JiTBlock {
+    /* ===== Global layout ===== */
+    rankdir=LR;
+    splines=polyline;
+    nodesep=0.4;
+    ranksep=0.6;
+
+    size="16,9!";
+    ratio=fill;
+
+    node [shape=box, style="rounded,filled", fillcolor=white, fontsize=12];
+
+    /* ===== Inputs ===== */
+    x_in [label="Input x"];
+    c_in [label="Conditioning c"];
+
+    /* ===== AdaLN ===== */
+    adaLN [label="AdaLN Modulation\nSiLU → Linear(6·hidden)"];
+
+    shift_msa [label="shift_msa"];
+    scale_msa [label="scale_msa"];
+    gate_msa  [label="gate_msa"];
+    shift_mlp [label="shift_mlp"];
+    scale_mlp [label="scale_mlp"];
+    gate_mlp  [label="gate_mlp"];
+
+    /* ===== Attention ===== */
+    norm1 [label="RMSNorm"];
+    mod1  [label="AdaLN (MSA)"];
+    attn  [label="Self-Attention\n(QKV + RoPE)"];
+    gmsa  [label="× gate_msa"];
+    add1  [label="Residual"];
+
+    /* ===== MLP ===== */
+    norm2 [label="RMSNorm"];
+    mod2  [label="AdaLN (MLP)"];
+    mlp   [label="SwiGLU FFN"];
+    gmlp  [label="× gate_mlp"];
+    add2  [label="Residual"];
+
+    x_out [label="Output x"];
+
+    /* ===== Rank control ===== */
+    { rank=same; c_in; adaLN; shift_msa; scale_msa; gate_msa; shift_mlp; scale_mlp; gate_mlp }
+    { rank=same; x_in; norm1; mod1; attn; gmsa; add1; norm2; mod2; mlp; gmlp; add2; x_out }
+
+    /* ===== Edges ===== */
+    c_in -> adaLN;
+    adaLN -> shift_msa;
+    adaLN -> scale_msa;
+    adaLN -> gate_msa;
+    adaLN -> shift_mlp;
+    adaLN -> scale_mlp;
+    adaLN -> gate_mlp;
+
+    x_in -> norm1 -> mod1 -> attn -> gmsa -> add1;
+    x_in -> add1;
+    shift_msa -> mod1;
+    scale_msa -> mod1;
+    gate_msa  -> gmsa;
+
+    add1 -> norm2 -> mod2 -> mlp -> gmlp -> add2;
+    add1 -> add2;
+    shift_mlp -> mod2;
+    scale_mlp -> mod2;
+    gate_mlp  -> gmlp;
+
+    add2 -> x_out;
+}

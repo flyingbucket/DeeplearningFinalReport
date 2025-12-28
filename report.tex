@@ -11,8 +11,6 @@
 \setCJKsansfont{Source Han Sans CN}[BoldFont={Source Han Sans CN Bold}]
 % \setCJKmonofont{Sarasa Mono CN}
 
-% \input{commands.tex}
-
 % beamer 已加载 hyperref；加 unicode 以支持中文书签
 \hypersetup{unicode}
 
@@ -55,7 +53,7 @@
 \setbeamertemplate{caption}[numbered]
 \setbeamertemplate{caption label separator}{.}
 
-\title{基于transformer的diffusion超分辨模型}
+\title{基于JiT的diffusion超分辨模型}
 \author{李孟霖}
 \date{\today}
 
@@ -66,73 +64,213 @@
 \end{frame}
 \section{Introduction}
 \subsection{研究背景}
-\begin{frame}{主流超分辨模型}
-  EDSR(CNN)
- 
-  SwinIR(transformer)
- 
-  StableSR(Diffusion) 
- 
-  Diffusion模型在生成任务中往往具有比较好的高频细节生成能力,
-  本研究中考虑使用Diffusion方法构造超分辨模型
+
+\begin{frame}{主流超分辨模型范式}
+\paragraph{回归型方法（Pixel-wise Regression）}
+\begin{itemize}
+  \item \textbf{EDSR（CNN）}：以 MSE / L1 为目标，PSNR/SSIM 表现稳定
+  \item \textbf{SwinIR（Transformer）}：更强建模能力，当前 SR 指标基线
+\end{itemize}
+
+\paragraph{生成型方法（Generative Models）}
+\begin{itemize}
+  \item \textbf{GAN-based SR}（如 SRGAN）：提升感知质量，但训练不稳定、指标与视觉存在权衡
+  \item \textbf{Diffusion-based SR}（如 StableSR）：逐步去噪，\textbf{高频细节表达能力强}
+\end{itemize}
+
+\paragraph{动机}
+Diffusion 模型在生成任务中往往具有较强的高频细节建模能力，
+本任务中尝试将 \textbf{Diffusion + Transformer backbone} 引入超分辨任务，
+并分析其在像素对齐与空间结构约束上的表现与局限。
 \end{frame}
 
-\begin{frame}{Diffusion backbone}
-  UNet 
- 
-  DiT 
- 
-  Transformer模型相比于UNet具有更好的全局性、更强的灵活性和更低的计算开销，
-  本研究考虑使用Transformer作为去噪模块
+\begin{frame}{Diffusion 去噪网络的 Backbone 选择}
+\paragraph{常见去噪结构}
+\begin{itemize}
+  \item \textbf{UNet}：
+  多尺度卷积结构，局部归纳偏置强，在超分辨等低层视觉任务中被广泛采用
+  \item \textbf{DiT / JiT（Transformer-based）}：
+  使用 ViT 结构作为去噪网络，通过 self-attention 建模全局依赖
+\end{itemize}
+
+\paragraph{Transformer 的潜在优势}
+\begin{itemize}
+  \item \textbf{全局建模能力强}：self-attention 可直接建模远距离像素/patch 关系
+  \item \textbf{结构灵活}：天然适合 token-level 条件注入（时间、类别或图像条件）
+  \item \textbf{统一建模范式}：避免多尺度卷积结构的复杂设计
+\end{itemize}
+
+基于以上考虑，本研究采用 \textbf{Transformer 作为 Diffusion 的去噪模块}，
+并进一步研究其在 \textbf{图像条件超分辨任务} 中的表现与局限。
 \end{frame}
 
-\begin{frame}{去噪方式}
-  epsilon-prediction 
- 
-  x-prediction 
- 
-  v-prediction 
+\begin{frame}{Diffusion 模型的去噪预测方式}
+\paragraph{三种参数化方式}
+\begin{itemize}
+  \item \textbf{$\epsilon$-prediction}：
+  直接预测噪声 $\epsilon$，是早期 Diffusion 模型的常见形式
+  \item \textbf{$x$-prediction}：
+  预测原始干净图像 $x_0$，更直观，常用于高分辨率生成
+  \item \textbf{$v$-prediction}：
+  预测速度变量 $v$，在不同噪声强度下具有更稳定的梯度尺度
+\end{itemize}
+\paragraph{本任务中的实现方式}
+\begin{itemize}
+  \item 网络前向输出采用 \textbf{$x$-prediction}
+  \item 训练时通过固定变换，将 $x$-prediction 转换为 \textbf{$v$-prediction loss}
+  \item 该做法与 JiT / EDM 等工作保持一致
+\end{itemize}
 \end{frame}
+
+\begin{frame}{v-prediction 的定义}
+Diffusion 前向过程定义为：
+\[
+x_t = \alpha_t x_0 + \sigma_t \epsilon,
+\quad \epsilon \sim \mathcal{N}(0, I)
+\]
+
+\textbf{v-prediction} 定义为：
+\[
+v_t = \alpha_t \epsilon - \sigma_t x_0
+\]
+
+在训练中，模型预测 $\hat{x}_0$，
+并通过固定变换得到 $\hat{v}_t$，
+使用 $v$-prediction loss 进行优化。
+\end{frame}
+
 \subsection{相关工作}
-\begin{frame}{JiT}
-  何恺明团队CFG条件生成模型(JiT)，Back to Basics: Let Denoising Generative Models Denoise
+% \begin{frame}{JiT}
+%   何恺明团队CFG条件生成模型(JiT)，Back to Basics: Let Denoising Generative Models Denoise
+%
+%   低维流形假设:JiT研究认为，真实分布处在整个图像空间中的低维流行中。
+%
+%   以vit为核心去噪模块替代UNet,模型做x-prediction,x-prediction的预测值变换为v-prediction构造损失函数
+% \end{frame}
+%
+% \section{Methods}
+% \begin{frame}{模型概览}
+%   主体与JiT相同，删去CFGtoken拼接，尝试按下述两种方式将低清图信息引入 
+% \end{frame}
 
-  低维流形假设
+\begin{frame}{JiT：x-prediction 与 v-prediction}
+\paragraph{JiT 的基本思想}
+JiT（Back to Basics: Let Denoising Generative Models Denoise）认为，
 
-  以vit为去噪模块backbone,模型做x-prediction,x-prediction的预测值变换为v-prediction构造损失函数
+真实数据分布位于高维图像空间中的\textbf{低维流形}，
+
+使用 Transformer（ViT）作为 Diffusion 的去噪网络。
+
 \end{frame}
 
-\section{Methods}
-\begin{frame}{模型概览}
-  主体与JiT相同，删去CFGtoken拼接，尝试按下述两种方式将低清图信息引入 
+\begin{frame}{JiT：x-prediction 与 v-prediction}
+\vspace{-0.5em}
+前向加噪过程
+\[
+x_t = t \, x_0 + (1 - t)\, \epsilon,
+\quad \epsilon \sim \mathcal{N}(0, I)
+\]
+
+\vspace{-0.8em}
+模型预测 $\hat{x}_0$，并通过固定变换构造 $v$：
+\[
+\hat{v}_t = \frac{\hat{x}_0 - x_t}{1 - t},
+\qquad
+v_t = \frac{x_0 - x_t}{1 - t}
+\]
+
+\vspace{-0.8em}
+训练目标：
+\[
+\mathcal{L}
+=
+\mathbb{E}\!\left[
+\left\|
+\hat{v}_t - v_t
+\right\|_2^2
+\right]
+\]
 \end{frame}
 
 \begin{frame}{低清图插入方式}
   \begin{itemize}
-    \item 将低清图编码为token,和带噪声图像拼接成一个序列
     \item 将低清图和带噪声图像按通道拼接
+    \item 将低清图编码为token,和带噪声图像拼接成一个序列
   \end{itemize}
 \end{frame}
 
-\section{Experiments}
-\subsection{按token拼接}
-\begin{frame}{性能指标}
-  psnr ssim 
+\section{实验}
+\subsection{性能指标}
+\begin{frame}{通道拼接（Concat）方案：性能指标}
+\vspace{-0.5em}
+
+\begin{center}
+\textbf{PSNR: 6.98 \quad\quad SSIM: 0.146}
+\end{center}
+
+\vspace{-0.5em}
+\begin{figure}
+  \centering
+  \includegraphics[width=0.9\linewidth]{./preprocess/figures/L16_concat_curves.pdf}
+  \caption{L16 通道拼接方案在验证集上的性能曲线}
+\end{figure}
 \end{frame}
+
 \begin{frame}
-  效果图 
+\begin{figure}
+  \centering
+  \includegraphics[width=0.9\linewidth]{./preprocess/figures/L16_concat_img.png}
+  \caption{L16 通道拼接方案效果图}
+\end{figure}
 \end{frame}
-\subsection{按通道拼接}
-\begin{frame}{性能指标}
-  psnr ssim 
+
+\begin{frame}{Token 拼接方案：性能指标}
+\vspace{-0.5em}
+
+\begin{center}
+\textbf{PSNR: 20.47 \quad\quad SSIM: 0.617 \quad\quad 参数量: 131M}
+\end{center}
+
+\vspace{-0.5em}
+\begin{figure}
+  \centering
+  \includegraphics[width=0.9\linewidth]{./preprocess/figures/B16_token_curves.pdf}
+  \caption{B16 Token 拼接方案在验证集上的性能曲线}
+\end{figure}
 \end{frame}
+
 \begin{frame}
-  效果图 
+\begin{figure}
+  \centering
+  \includegraphics[width=0.9\linewidth]{./preprocess/figures/L16_token_img.png}
+  \caption{B16 token拼接方案效果图}
+\end{figure}
+\end{frame}
+\begin{frame}{Token 拼接方案：性能指标}
+\vspace{-0.5em}
+
+\begin{center}
+\textbf{PSNR: 21.10 \quad\quad SSIM: 0.634 \quad\quad 参数量: 462M}
+\end{center}
+
+\vspace{-0.5em}
+\begin{figure}
+  \centering
+  \includegraphics[width=0.9\linewidth]{./preprocess/figures/L16_token_curves.pdf}
+  \caption{L16 Token 拼接方案在验证集上的性能曲线}
+\end{figure}
 \end{frame}
 
-\subsection{基线对比}
+\begin{frame}
+\begin{figure}
+  \centering
+  \includegraphics[width=0.9\linewidth]{./preprocess/figures/L16_token_img.png}
+  \caption{L16 token拼接方案效果图}
+\end{figure}
+\end{frame}
 
 
+\section{结果分析}
 \begin{frame}[standout]
   谢谢大家！
 \end{frame}

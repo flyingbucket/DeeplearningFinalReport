@@ -1,0 +1,38 @@
+digraph JiTBlockAbstract {
+    rankdir=LR;
+    size="16,9!";
+    ratio=fill;
+    splines=polyline;
+    concentrate=true;
+
+    nodesep=0.15;
+    ranksep=0.22;
+
+    node [
+      shape=box,
+      style=rounded,
+      fontsize=18,
+      width=2.2,
+      height=1.0
+    ];
+    LR   [label="LR tokens"];
+    HRn  [label="Noisy HR tokens"];
+
+    SA   [label="JiTBlock\nSelf-Attention\n(tokens are symmetric)",
+          style="rounded,filled", fillcolor="#f2f2f2"];
+
+    Mod  [label="AdaLN + Gate\n(shift / scale)",
+          style="rounded,dashed"];
+
+    C    [label="Condition c"];
+
+    OUT  [label="Output tokens"];
+
+    LR  -> SA;
+    HRn -> SA;
+
+    C   -> Mod;
+    Mod -> SA [style=dashed];
+
+    SA  -> OUT;
+}
