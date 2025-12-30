@@ -75,13 +75,12 @@
 \paragraph{生成型方法（Generative Models）}
 \begin{itemize}
   \item \textbf{GAN-based SR}（如 SRGAN）：提升感知质量，但训练不稳定、指标与视觉存在权衡
-  \item \textbf{Diffusion-based SR}（如 StableSR）：逐步去噪，\textbf{高频细节表达能力强}
+  \item \textbf{Diffusion-based SR}（如 SR3、StableSR）：逐步去噪，\textbf{高频细节表达能力强}
 \end{itemize}
 
 \paragraph{动机}
 Diffusion 模型在生成任务中往往具有较强的高频细节建模能力，
-本任务中尝试将 \textbf{Diffusion + Transformer backbone} 引入超分辨任务，
-并分析其在像素对齐与空间结构约束上的表现与局限。
+本任务中尝试将 \textbf{Diffusion + Transformer backbone} 引入超分辨任务
 \end{frame}
 
 \begin{frame}{Diffusion 去噪网络的 Backbone 选择}
@@ -140,28 +139,24 @@ v_t = \alpha_t \epsilon - \sigma_t x_0
 \end{frame}
 
 \subsection{相关工作}
-% \begin{frame}{JiT}
-%   何恺明团队CFG条件生成模型(JiT)，Back to Basics: Let Denoising Generative Models Denoise
-%
-%   低维流形假设:JiT研究认为，真实分布处在整个图像空间中的低维流行中。
-%
-%   以vit为核心去噪模块替代UNet,模型做x-prediction,x-prediction的预测值变换为v-prediction构造损失函数
-% \end{frame}
-%
-% \section{Methods}
-% \begin{frame}{模型概览}
-%   主体与JiT相同，删去CFGtoken拼接，尝试按下述两种方式将低清图信息引入 
-% \end{frame}
+\begin{frame}{JiT}
+  何恺明团队CFG条件生成模型(JiT)，Back to Basics: Let Denoising Generative Models Denoise
 
-\begin{frame}{JiT：x-prediction 与 v-prediction}
-\paragraph{JiT 的基本思想}
-JiT（Back to Basics: Let Denoising Generative Models Denoise）认为，
+  低维流形假设:JiT研究认为，真实分布处在整个图像空间中的低维流形中。
 
-真实数据分布位于高维图像空间中的\textbf{低维流形}，
-
-使用 Transformer（ViT）作为 Diffusion 的去噪网络。
-
+  以vit为核心去噪模块替代UNet,模型做x-prediction,x-prediction的预测值变换为v-prediction构造损失函数
 \end{frame}
+
+
+% \begin{frame}{JiT：x-prediction 与 v-prediction}
+% \paragraph{JiT 的基本思想}
+% JiT（Back to Basics: Let Denoising Generative Models Denoise）认为，
+%
+% 真实数据分布位于高维图像空间中的\textbf{低维流形}，
+%
+% 使用 Transformer（ViT）作为 Diffusion 的去噪网络。
+%
+% \end{frame}
 
 \begin{frame}{JiT：x-prediction 与 v-prediction}
 \vspace{-0.5em}
@@ -192,6 +187,14 @@ v_t = \frac{x_0 - x_t}{1 - t}
 \]
 \end{frame}
 
+\section{Methods}
+\begin{frame}{模型概览}
+  主体与JiT相同,去噪模块做x-prediction,换算为v-prediction构造loss
+
+  去噪模块为多个vit模块的串联，串联长度由超参数控制
+  
+  删去CFGtoken拼接,尝试按下述两种方式将低清图信息引入 
+\end{frame}
 \begin{frame}{低清图插入方式}
   \begin{itemize}
     \item 将低清图和带噪声图像按通道拼接
@@ -280,6 +283,7 @@ v_t = \frac{x_0 - x_t}{1 - t}
     \textbf{算法}          & \textbf{psnr}       & \textbf{ssim}     \\ \hline
     bicubic       & 19.67      & 0.579     \\ \hline
     EDSR          & 22.92      & 0.702     \\ \hline
+    SRGAN         & 21.87      & 0.692     \\ \hline 
     SwinIR        & 23.77      & 0.733     \\ \hline 
     本模型        & 20.47      & 0.617      \\ \hline
     \end{tabular}
